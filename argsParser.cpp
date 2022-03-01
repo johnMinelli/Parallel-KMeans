@@ -19,6 +19,11 @@ int ArgsParser::parse(int argc, char **argv) {
                 // Specify behaviour of algorithm execution as a search process over k
                 searchClusters = true;
                 istringstream(*++args) >> searchParallelThreads;
+                istringstream(*++args) >> kmeansParallelThreads;
+                if(searchParallelThreads < 1 or kmeansParallelThreads < 1){
+                    cout << "ERROR: Unexpected command line value: number of thread must be > 0]" << endl;
+                    throw std::invalid_argument("");
+                }
             } else if (x == "-d") {
                 // Specify number portion of data to use
                 istringstream(*++args) >> dataUsage;
@@ -54,11 +59,11 @@ void printHelp(char *arg0) {
     cout << endl << "Performs single-pass clustering for the specified image file." << endl
               << "USAGE:" << endl
               << "    " << arg0 << " "
-              << "[-k numClusters] [-ksearch] [-i maxIterations] [-d dataUsage] [-s] [-o] [-v] [-t]"
+              << "[-k numClusters] [-ksearch searchThreads kmeansThreads] [-i maxIterations] [-d dataUsage] [-s] [-o] [-v] [-t]"
               << endl
               << "ARGUMENTS:" << endl
               << "    -k\tNumber of clusters to compute (default=10)." << endl
-              << "    -ksearch\tExecute the algorithm over the number of clusters in range [2, k]." << endl
+              << "    -ksearch\tExecute the algorithm over the number of clusters in range [2, k]. Specify the numbers of threads for search and KMeans computation." << endl
               << "    -i\tMax number of iterations to perform (default=10)." << endl
               << "    -d\tData usage fraction 0=min, 4=max (default=1)." << endl
               << "    -s\tVisualize the results of algorithm execution." << endl

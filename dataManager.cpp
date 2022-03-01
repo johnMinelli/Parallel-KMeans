@@ -21,11 +21,8 @@ float *DataManager::loadData() {
 
     // pre-process into HWC standard format and acquire max value in RGB bands for normalization
 #ifdef USE_OMP
-    #pragma omp parallel default(shared)
-    {
-        #pragma omp for collapse(2) private(k) reduction(max:maxR, maxG, maxB)
+    #pragma omp parallel for collapse(2) default(shared) private(k) reduction(max:maxR, maxG, maxB)
 #endif
-
         for (i = 0; i < lines; i++) {
             for (j = 0; j < samples; j++) {
                 for (k = 0; k < bands; k++)
@@ -41,9 +38,6 @@ float *DataManager::loadData() {
                 maxB = image[(i * offset_CW) + (B * samples) + j];
             }
         }
-#ifdef USE_OMP
-    }
-#endif
 
     this->rescaleFactorR = (1/maxR * 255);
     this->rescaleFactorG = (1/maxG * 255);

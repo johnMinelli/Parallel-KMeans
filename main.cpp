@@ -41,48 +41,41 @@ int main(int argc, char *argv[]) {
     ArgsParser parser;
     if(parser.parse(argc, argv))
         return 1;
+
+    // Load data
+#ifdef USE_OMP
+    double initial_start_time = omp_get_wtime(), start_time = omp_get_wtime();
+    double time_per_cluster_iter = 0;
+#endif
+    DataManager dataMgr = DataManager(parser.dataUsage);
+    float *data = dataMgr.loadData();
+    if(data == nullptr)
+        return 1;
+#ifdef USE_OMP
+    printf("Data read in: %f seconds\n", omp_get_wtime() - start_time); fflush(stdout);
+#else
+    printf("Data read\n"; fflush(stdout);
+#endif
+
     // Variables to keep track of best k value search, initialized at first position
-    int bestK = parser.searchClusters? 2:parser.numClusters;
+    int minK = parser.searchClusters? 2:parser.numClusters;
+    int bestK = minK;
     long bestKVar = std::numeric_limits<long>::max();
- #pragma omp for collapse(2)
-        for (int k=bestK; k < parser.numClusters+1; k++) {
-            for (int j=bestK; j < parser.numClusters+1; j++) {
-                int s = omp_get_thread_num();
-            printf(" %d cycle executed from %d thread out of %d\n", k, s, omp_get_num_threads());
-            fflush(stdout);
+    bool displayClusters = parser.displayClusters and (parser.searchParallelThreads==1) ;
 
-            }
-        }
-
-#pragma omp barrier
-    return(0);
-
-
+    // let every thread os search start their pool of threads for single k value
+#ifdef USE_OMP
     omp_set_nested(true);
-    #pragma omp parallel for
-    for (int k=bestK; k < parser.numClusters+1; k++) {
-        int x = omp_get_thread_num();
-        printf(" %d cycle executed from %d thread out of %d\n",k, x, omp_get_num_threads());
-        fflush(stdout);
+    #pragma omp parallel for default(shared) num_threads(parser.searchParallelThreads)
+#endif
+    for (int k=minK; k < parser.numClusters+1; k++) {
 
-        omp_set_num_threads(2);
-        int max = omp_get_num_threads();
-        printf(" %d cycle and executed from %d thread out of %d\n",k, x, max);
-        fflush(stdout);
-        #pragma omp parallel for
-        for (int b=0; b < 2; b++) {
-            int y1 = omp_get_thread_num();
-            int max1 = omp_get_num_threads();
-            printf(" %d cycle and %d subcycle executed from %d thread and %d subsubthread out of %d\n",k, b, x, y1, max1);
-            fflush(stdout);
-        }
-    }
-#pragma omp barrier
-    return(0);
-    for (int k=bestK; k < parser.numClusters+1; k++) {
+    #ifdef USE_OMP
+        if(parser.searchClusters)
+            omp_set_num_threads(parser.kmeansParallelThreads);
+    #endif
 
         int numClusters = k;
-        bool displayClusters = parser.displayClusters;
         int i = 0;
 
         // Initialize SDL
@@ -91,20 +84,6 @@ int main(int argc, char *argv[]) {
             gui = new GUIRenderer(SCREEN_WIDTH, SCREEN_HEIGHT);
             displayClusters = gui->guiInitialized;
         }
-
-        // Load data  TODO
-    #ifdef USE_OMP
-        double start_time = omp_get_wtime();
-    #endif
-        DataManager dataMgr = DataManager(parser.dataUsage);
-        float *data = dataMgr.loadData();
-        if(data == nullptr)
-            return 1;
-    #ifdef USE_OMP
-        printf("Data read in: %f seconds\n", omp_get_wtime() - start_time); fflush(stdout);
-    #else
-        printf("Data read\n"; fflush(stdout);
-    #endif
 
         // Show image
         if(displayClusters)
@@ -126,7 +105,7 @@ int main(int argc, char *argv[]) {
         long numChanged;
         int kMeansIterations;
 
-        printf("Starting initialization..\n");
+        printf("(k=%d) Starting initialization..\n", numClusters);
         for (i = 0; i < numClusters; i++) {
             // tboggs original use WHC
     //        copy(data + ((i * numRows / numClusters) * numCols + (i * numCols / numClusters)) * numBands, centers[i],
@@ -135,15 +114,15 @@ int main(int argc, char *argv[]) {
             copyCentroidAddress(data + ((i * numCols / numClusters) * numRows + (i * numRows / numClusters)) * numBands, centroids[i], numBands);
         }
 
-        printf("Starting iterate:\n");
+        printf("(k=%d) Starting iterate:\n", numClusters);
 
     #ifdef USE_OMP
         start_time = omp_get_wtime();
     #endif
 
-        printf("Iteration 1... ");
+        // First iteration
         assignObjects(data, pixelsMap, numPixels, centroids, numClusters, numBands);
-        printf("Initial cluster map calculated.\n"); fflush(stdout);
+        printf("(k=%d) Iteration 1... Initial cluster map calculated.\n", numClusters); fflush(stdout);
         kMeansIterations = 1;
 
         // Update cluster map until max number of iterations has been reached or
@@ -152,20 +131,21 @@ int main(int argc, char *argv[]) {
         for (; kMeansIterations < parser.maxIterations; kMeansIterations++) {
             if(displayClusters)
                 dataMgr.showClustersOverlay(gui, pixelsMap, numClusters);
-            cout << "Iteration " << kMeansIterations + 1 << "... " << flush;
+            // New iteration
             computeCentroids(data, pixelsMap, numPixels, centroids, numClusters, numBands, clustersSize);
             numChanged = assignObjects(data, pixelsMap, numPixels, centroids, numClusters, numBands);
-            cout << numChanged << " pixels reassigned." << endl << flush;
+            cout << "(k=" << numClusters << ") Iteration " << kMeansIterations + 1 << "... " << numChanged << " pixels reassigned." << endl << flush;
         }
         /*-------------------------------------------------------------------------------------------*/
 
         // Write output results
     #ifdef USE_OMP
         double end_time = omp_get_wtime();
-        printf("Number of iterations: %d, total time: %f seconds, time per iteration: %f seconds\n",
-               kMeansIterations, (end_time - start_time), (end_time - start_time)/kMeansIterations);
+        printf("(k=%d) Number of iterations: %d, total time: %f seconds, time per iteration: %f seconds\n",
+               numClusters, kMeansIterations, (end_time - start_time), (end_time - start_time)/kMeansIterations);
         fflush(stdout);
-        if (parser.writeTimeLog) {
+        time_per_cluster_iter += ((end_time - start_time)/(kMeansIterations*numClusters));
+        if (parser.writeTimeLog) {  //TODO
             std::cout << "Writing execution time to file \"time.log\"." << std::endl;
             std::ofstream fout("time.log");
             fout << "Number of iterations: " << kMeansIterations << ", total time: " << (end_time - start_time)
@@ -176,14 +156,17 @@ int main(int argc, char *argv[]) {
         printf("End of iterations\n"); fflush(stdout);
     #endif
         long inVariance = computeClusterVariance(data, pixelsMap, numPixels, centroids, numBands);
-        printf("Within-class variance: %d\n", inVariance); fflush(stdout);
+        printf("(k=%d) Within-class variance: %d\n\n", numClusters, inVariance); fflush(stdout);
 
+    #ifdef USE_OMP
+    #pragma omp critical
+    #endif
         if(inVariance < bestKVar) {
             bestKVar = inVariance;
             bestK = numClusters;
         }
 
-        if (parser.writeOutputLog) {
+        if (parser.writeOutputLog) {  //TODO
             std::cout << "Writing output file \"output.log\"." << std::endl;
             std::ofstream fout("output.log");
             fout << numRows << std::endl << numCols << std::endl;
@@ -211,8 +194,15 @@ int main(int argc, char *argv[]) {
 
     }
 
-    if(parser.searchClusters)
-        printf("Best k value found is %d with within-class variance %d\n", bestK, bestKVar); fflush(stdout);
+    if(parser.searchClusters) {
+        printf("Best k value found is %d with within-class variance %d\n", bestK, bestKVar);
+#ifdef USE_OMP
+        printf("Search executed in %f seconds, time per cluster iteration: %f\n", (omp_get_wtime() - initial_start_time), time_per_cluster_iter/(parser.numClusters+1 - minK));
+#endif
+        fflush(stdout);
+    }
+
+
 
     return 0;
 }

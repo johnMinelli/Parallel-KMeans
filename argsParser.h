@@ -7,11 +7,11 @@
 using namespace std;
 
 struct ArgsParser {
-    ArgsParser() : numClusters(10), maxIterations(10), dataUsage(1), searchParallelThreads(0), searchClusters(false), displayClusters(false), writeOutputLog(false), writeTimeLog(false) {};
+    ArgsParser() : numClusters(10), maxIterations(10), dataUsage(1), searchParallelThreads(1), kmeansParallelThreads(0), searchClusters(false), displayClusters(false), writeOutputLog(false), writeTimeLog(false) {};
 
     int parse(int argc, char **argv);
 
-    int numClusters, maxIterations, dataUsage, searchParallelThreads;
+    int numClusters, maxIterations, dataUsage, searchParallelThreads, kmeansParallelThreads;
     bool searchClusters;
     bool displayClusters;
     bool writeOutputLog;

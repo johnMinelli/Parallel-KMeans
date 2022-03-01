@@ -42,6 +42,7 @@ int computeCentroids(const T *data, const int *objMapping, long numObjects,
             #pragma omp atomic
             clustersSize[objMapping[i]] += 1;
         }
+        #pragma omp barrier
         #pragma omp for collapse(2)
         for (i = 0; i < (int) numClusters; i++) {
             for (j = 0; j < dataDepth; j++)
