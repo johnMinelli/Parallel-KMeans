@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.21)
+project(ParallusterK)
+
+find_package(OpenMP REQUIRED)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -DUSE_OMP")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${OpenMP_CXX_FLAGS} -DUSE_OMP -DOMP_NUM_THREADS=4")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}" )
+
+endif()
+
+SET(SDL2_DIR "C:/tools/SDL2/x86_64-w64-mingw32/lib/cmake/SDL2")
+# SET(GDAL_DIR  "C:/Program Files/GDAL")
+find_package(SDL2 REQUIRED)
+# find_package(GDAL REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
+add_executable(ParallusterK main.cpp dataManager.cpp dataManager.h argsParser.cpp argsParser.h kmeans.h GUIRenderer.cpp GUIRenderer.h)
+target_link_libraries(ParallusterK ${SDL2_LIBRARIES})
