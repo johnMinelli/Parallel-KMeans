@@ -119,8 +119,9 @@ long assignObjects(const T *data, int *objMapping, long numObjects, float **cent
 }
 
 template<typename T>
-long computeClusterVariance(const T *data, int *objMapping, long numObjects, float **centroids, int dataDepth) {
-    long i, clustersVariance = 0;
+float computeClusterVariance(const T *data, int *objMapping, long numObjects, float **centroids, int dataDepth) {
+    long i;
+    float clustersVariance = 0;
     const T *pixel;
 
 #ifdef USE_OMP
