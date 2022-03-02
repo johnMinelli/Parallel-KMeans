@@ -1,6 +1,5 @@
 #include <iostream>
 #include <algorithm>
-#include "SDL.h"
 #include "argsParser.h"
 #include "dataManager.h"
 #include "kmeans.h"
@@ -8,6 +7,7 @@
 
 #if defined(_OPENMP)
 #include <omp.h>
+#define USE_OMP true
 #endif
 
 using namespace std;
@@ -28,9 +28,7 @@ using namespace std;
  ****************************************************************************/
 
 //TODO
-// add parallel-k-search <nthreads> and k parameter becomes the maximum value of clusters to use [2-k]
 // script for cluster execution
-// output of values for evaluation from cluster and metric for inside class variance as a clustering result
 
 int main(int argc, char *argv[]) {
 #ifdef USE_OMP
@@ -41,6 +39,21 @@ int main(int argc, char *argv[]) {
     ArgsParser parser;
     if(parser.parse(argc, argv))
         return 1;
+
+    // Features pre setup
+    if(parser.writeTimeLog) std::ofstream f("time.log");  // new empty file
+    if(parser.writeOutputLog) std::ofstream f("output.log");  // new empty file
+#ifndef SDL_VERSION
+    if(parser.displayClusters){
+        parser.displayClusters = false;
+        printf("SDL library not found - Show features disabled\n"); fflush(stdout);
+    }
+#endif
+    if(parser.displayClusters and (parser.searchParallelThreads!=1)){
+        parser.displayClusters = false;
+        printf("Multithreads ksearch doesn't support visualization - Show features disabled\n"); fflush(stdout);
+    }
+    bool displayClusters = parser.displayClusters;
 
     // Load data
 #ifdef USE_OMP
@@ -61,17 +74,16 @@ int main(int argc, char *argv[]) {
     int minK = parser.searchClusters? 2:parser.numClusters;
     int bestK = minK;
     long bestKVar = std::numeric_limits<long>::max();
-    bool displayClusters = parser.displayClusters and (parser.searchParallelThreads==1) ;
 
-    // let every thread os search start their pool of threads for single k value
+    // Make K-search
 #ifdef USE_OMP
-    omp_set_nested(true);
+    omp_set_nested(true);  // let every thread of search (the executions on different k values) start their pool
     #pragma omp parallel for default(shared) num_threads(parser.searchParallelThreads)
 #endif
     for (int k=minK; k < parser.numClusters+1; k++) {
 
     #ifdef USE_OMP
-        if(parser.searchClusters)
+        if(parser.searchClusters)  // set the size of the thread pool available for KMeans algorithm execution
             omp_set_num_threads(parser.kmeansParallelThreads);
     #endif
 
@@ -107,10 +119,7 @@ int main(int argc, char *argv[]) {
 
         printf("(k=%d) Starting initialization..\n", numClusters);
         for (i = 0; i < numClusters; i++) {
-            // tboggs original use WHC
-    //        copy(data + ((i * numRows / numClusters) * numCols + (i * numCols / numClusters)) * numBands, centers[i],
-    //             numBands);
-    //         we will use HWC
+            // HWC save format
             copyCentroidAddress(data + ((i * numCols / numClusters) * numRows + (i * numRows / numClusters)) * numBands, centroids[i], numBands);
         }
 
@@ -145,12 +154,15 @@ int main(int argc, char *argv[]) {
                numClusters, kMeansIterations, (end_time - start_time), (end_time - start_time)/kMeansIterations);
         fflush(stdout);
         time_per_cluster_iter += ((end_time - start_time)/(kMeansIterations*numClusters));
-        if (parser.writeTimeLog) {  //TODO
-            std::cout << "Writing execution time to file \"time.log\"." << std::endl;
-            std::ofstream fout("time.log");
-            fout << "Number of iterations: " << kMeansIterations << ", total time: " << (end_time - start_time)
-                 << " seconds, time per iteration: " <<(end_time - start_time)/kMeansIterations<< " seconds\n" << std::endl;
-            fout.close();
+        if(parser.writeTimeLog) {
+            std::cout << "(k=" << numClusters << ") Writing execution time to file \"time.log\"." << std::endl;
+            #pragma omp critical
+            {
+                std::ofstream fout; fout.open("time.log", ios::app);
+                fout << "(k=" << numClusters << ") Number of iterations: " << kMeansIterations << ", total time: " << (end_time - start_time)
+                     << " seconds, time per iteration: " <<(end_time - start_time)/kMeansIterations<< " seconds\n" << std::endl;
+                fout.close();
+            }
         }
     #else
         printf("End of iterations\n"); fflush(stdout);
@@ -166,13 +178,20 @@ int main(int argc, char *argv[]) {
             bestK = numClusters;
         }
 
-        if (parser.writeOutputLog) {  //TODO
-            std::cout << "Writing output file \"output.log\"." << std::endl;
-            std::ofstream fout("output.log");
-            fout << numRows << std::endl << numCols << std::endl;
+        if(parser.writeOutputLog) {
+            std::cout << "(k=" << numClusters << ") Writing output file \"output.log\"." << std::endl;
+    #ifdef USE_OMP
+    #pragma omp critical
+    {
+    #endif
+            std::ofstream fout; fout.open("output.log", ios::app);
+            fout << "k=" << numClusters << std::endl << "rows=" << numRows << std::endl << "columns=" << numCols << std::endl;
             for (i = 0; i < numRows * numCols; i++)
                 fout << pixelsMap[i] << std::endl;
             fout.close();
+    #ifdef USE_OMP
+    }
+    #endif
         }
 
         // Setup events loop
@@ -192,17 +211,26 @@ int main(int argc, char *argv[]) {
             gui->quit();
         }
 
-    }
+    }  // End search
 
+    // Log output
     if(parser.searchClusters) {
+        std::ofstream fout;
         printf("Best k value found is %d with within-class variance %d\n", bestK, bestKVar);
+        if(parser.writeTimeLog) {
+            fout.open("time.log", ios::app);
+            fout << "Best k value found is " << bestK << " with within-class variance " << bestKVar << std::endl;
+        }
 #ifdef USE_OMP
-        printf("Search executed in %f seconds, time per cluster iteration: %f\n", (omp_get_wtime() - initial_start_time), time_per_cluster_iter/(parser.numClusters+1 - minK));
+        float totTime = (omp_get_wtime() - initial_start_time);
+        float kiterTime = time_per_cluster_iter/(parser.numClusters+1 - minK);
+        printf("Search executed in %f seconds, time per cluster iteration: %f\n", totTime, kiterTime);
+        if(parser.writeTimeLog)
+            fout << "Search executed in " << totTime << " seconds, time per cluster iteration: " << kiterTime << std::endl;
 #endif
+        if(parser.writeTimeLog) fout.close();
         fflush(stdout);
     }
-
-
 
     return 0;
 }
