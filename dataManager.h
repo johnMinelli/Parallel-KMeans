@@ -1,10 +1,12 @@
-#include <SDL_render.h>
 #include <iostream>
 #include <limits>
 #include <fstream>
 #include <string>
-#include "GUIRenderer.h"
 #include <cmath>
+#ifdef USE_SDL
+#include "GUIRenderer.h"
+#include <SDL_render.h>
+#endif
 
 using namespace std;
 
@@ -35,9 +37,11 @@ private:
     int R = 58-1, G = 33-1, B = 19-1;
     // normalization [0-255] factors for corresponding bands
     float rescaleFactorR = 1, rescaleFactorG = 1, rescaleFactorB = 1;
+#ifdef USE_SDL
     SDL_Color* colorsArray = nullptr;
     SDL_Surface* imageSurface = nullptr;
     SDL_Surface* clustersSurface = nullptr;
+#endif
 
 public:
     DataManager(int dataQt){
@@ -47,13 +51,16 @@ public:
     int getSamples() const { return samples; }
     int getLines() const { return lines; }
     int getBands() const { return bands; }
+
+    float *loadData();
+
+#ifdef USE_SDL
     SDL_Surface* getImage() const { return imageSurface; }
     SDL_Surface* getClustersImage() const { return clustersSurface; }
 
-    float *loadData();
     void showData(GUIRenderer *gui, float *data);
     void showClustersOverlay(GUIRenderer *gui, int *pixelsMap, int numClusters);
-
+#endif
 };
 
 #endif // DATAMANAGER_H

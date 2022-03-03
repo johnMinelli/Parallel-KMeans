@@ -3,8 +3,10 @@
 #include "argsParser.h"
 #include "dataManager.h"
 #include "kmeans.h"
+#ifdef SDL_VERSION
 #include "GUIRenderer.h"
-
+#define USE_SDL true
+#endif
 #if defined(_OPENMP)
 #include <omp.h>
 #define USE_OMP true
@@ -43,7 +45,7 @@ int main(int argc, char *argv[]) {
     // Features pre setup
     if(parser.writeTimeLog) std::ofstream f("time.log");  // new empty file
     if(parser.writeOutputLog) std::ofstream f("output.log");  // new empty file
-#ifndef SDL_VERSION
+#ifndef USE_SDL
     if(parser.displayClusters){
         parser.displayClusters = false;
         printf("SDL library not found - Show features disabled\n"); fflush(stdout);
@@ -90,16 +92,18 @@ int main(int argc, char *argv[]) {
         int numClusters = k;
         int i = 0;
 
-        // Initialize SDL
+    #ifdef USE_SDL  // Initialize SDL
         GUIRenderer* gui;
         if(displayClusters) {
             gui = new GUIRenderer(SCREEN_WIDTH, SCREEN_HEIGHT);
             displayClusters = gui->guiInitialized;
         }
+    #endif
 
-        // Show image
+    #ifdef USE_SDL  // Show image
         if(displayClusters)
             dataMgr.showData(gui, data);
+    #endif
 
         /*------------------------------------------KMeans-------------------------------------------*/
         // Calculate initial cluster centers: use evenly spaced pixels along the image diagonal to initialize the clusters.
@@ -138,8 +142,10 @@ int main(int argc, char *argv[]) {
         // fewer than a threshold number of pixels are reassigned between iterations.
 
         for (; kMeansIterations < parser.maxIterations; kMeansIterations++) {
+    #ifdef USE_SDL
             if(displayClusters)
                 dataMgr.showClustersOverlay(gui, pixelsMap, numClusters);
+    #endif
             // New iteration
             computeCentroids(data, pixelsMap, numPixels, centroids, numClusters, numBands, clustersSize);
             numChanged = assignObjects(data, pixelsMap, numPixels, centroids, numClusters, numBands);
@@ -194,7 +200,7 @@ int main(int argc, char *argv[]) {
     #endif
         }
 
-        // Setup events loop
+    #ifdef USE_SDL  // Setup events loop
         if(displayClusters) {
             bool quit = parser.searchClusters? true : false;
             while (!quit) {
@@ -210,6 +216,7 @@ int main(int argc, char *argv[]) {
             }
             gui->quit();
         }
+    #endif
 
     }  // End search
 

@@ -46,6 +46,7 @@ float *DataManager::loadData() {
     return processedImage;
 }
 
+#ifdef USE_SDL
 void DataManager::showData(GUIRenderer *gui, float *data) {
     Uint8 *rgb = new Uint8 [samples*lines*3];
     int i = 0, j = 0;
@@ -94,6 +95,7 @@ void DataManager::showClustersOverlay(GUIRenderer *gui, int* pixelsMap, int numC
         SDL_FreeSurface(clustersSurface);
     clustersSurface = overlay;
 }
+#endif
 
 template<typename T>
 int readFile(const char *fileName, long long numVals, T *array, long long offset) {
