@@ -1,0 +1,15 @@
+https://drive.google.com/uc?export=download&id=1USwKGGfFbcl9rwzQ2AgMBwVUBMm2Pfui
+
+To download directly (e.g. if you want to download it with wget command) follow these steps:
+download the file and upload it:
+ - on file.io (free version link valid for 1 download)
+ - on gdrive, then go to https://console.cloud.google.com/ ; create/open a project ; enable gdrive api ; create an APIKey ; replace the FileID and APIKey in the below URL
+   (find the FileID in the sharing url of the file, i.e. in the above public link is 1USwKGGfFbcl9rwzQ2AgMBwVUBMm2Pfui)
+
+https://www.googleapis.com/drive/v3/files/FileID?alt=media&key=APIKey
+
+then from cmd:
+> wget "https://www.googleapis.com/drive/v3/files/FileID?alt=media&key=APIKey
+> unzip thefile.zip
+
+The program code will use only the reflectance data (ang20180814t224053_corr_v2r2_img) since info about the dataset are not ridden from file but hardcoded :)
