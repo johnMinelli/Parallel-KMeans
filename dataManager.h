@@ -1,11 +1,15 @@
 #include <iostream>
-#include <limits>
+#include <climits>
 #include <fstream>
 #include <string>
 #include <cmath>
-#ifdef USE_SDL
+#if defined(SDL_VERSION) || defined(USE_SDL)
 #include "GUIRenderer.h"
 #include <SDL_render.h>
+#define USE_SDL true
+#endif
+#if defined(_OPENMP)
+#define USE_OMP true
 #endif
 
 using namespace std;

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <valarray>
 
+using namespace std;
 
 // Calculate the Euclidean distance between v1 and v2.  Each is assumed to be
 // a pointer to an array of 3 doubles.

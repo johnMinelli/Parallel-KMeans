@@ -1,5 +1,8 @@
 #include "dataManager.h"
 #include "common.h"
+#ifdef USE_OMP
+#include <omp.h>
+#endif
 
 
 template<typename T>
@@ -18,9 +21,11 @@ float *DataManager::loadData() {
     int offset_HW = samples * lines;  // (BSQ format)
     int offset_CW = bands * samples;  // (BIL format)
     float maxR = std::numeric_limits<float>::min(), maxG = std::numeric_limits<float>::min(), maxB = std::numeric_limits<float>::min();
+    int threads = 1;
 
     // pre-process into HWC standard format and acquire max value in RGB bands for normalization
 #ifdef USE_OMP
+    threads = omp_get_num_threads();
     #pragma omp parallel for collapse(2) default(shared) private(k) reduction(max:maxR, maxG, maxB)
 #endif
         for (i = 0; i < lines; i++) {
@@ -31,11 +36,11 @@ float *DataManager::loadData() {
                     else processedImage[(i * offset_CW) + (j * bands) + k] = image[(i * offset_CW) + (k * samples) + j];
 
                 // get max in red channel
-                maxR = image[(i * offset_CW) + (R * samples) + j];
+                maxR = threads>1? image[(i * offset_CW) + (R * samples) + j] : maxR<image[(i * offset_CW) + (R * samples) + j]? image[(i * offset_CW) + (R * samples) + j] : maxR;
                 // get max in green channel
-                maxG = image[(i * offset_CW) + (G * samples) + j];
+                maxG = threads>1? image[(i * offset_CW) + (G * samples) + j] : maxG<image[(i * offset_CW) + (G * samples) + j]? image[(i * offset_CW) + (G * samples) + j] : maxG;
                 // get max in blue channel
-                maxB = image[(i * offset_CW) + (B * samples) + j];
+                maxB = threads>1? image[(i * offset_CW) + (B * samples) + j] : maxB<image[(i * offset_CW) + (B * samples) + j]? image[(i * offset_CW) + (B * samples) + j] : maxB;
             }
         }
 

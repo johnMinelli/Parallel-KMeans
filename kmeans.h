@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include "common.h"
 
+#if defined(_OPENMP)
+#define USE_OMP true
+#endif
+
+using namespace std;
 
 // Computes the cluster centers by averaging all pixels assigned to each cluster.
 // ARGUMENTS:

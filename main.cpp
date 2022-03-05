@@ -3,7 +3,7 @@
 #include "argsParser.h"
 #include "dataManager.h"
 #include "kmeans.h"
-#ifdef SDL_VERSION
+#if defined(SDL_VERSION) || defined(USE_SDL)
 #include "GUIRenderer.h"
 #define USE_SDL true
 #endif
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
         printf("(k=%d) Starting initialization..\n", numClusters);
         for (i = 0; i < numClusters; i++) {
             // HWC save format
-            copyCentroidAddress(data + ((i * numCols / numClusters) * numRows + (i * numRows / numClusters)) * numBands, centroids[i], numBands);
+            copyCentroidAddress(data + ((i * numCols / numClusters) + (i * numRows / numClusters) * numCols) * numBands, centroids[i], numBands);
         }
 
         printf("(k=%d) Starting iterate:\n", numClusters);
