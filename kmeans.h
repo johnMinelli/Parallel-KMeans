@@ -117,24 +117,24 @@ long assignObjects(const T *data, int *objMapping, long numObjects, float **cent
             }
         }
         if (objMapping[i] != nearestCluster)
-            ++numChanged;
+            numChanged += 1;
         objMapping[i] = nearestCluster;
     }
     return numChanged;
 }
 
 template<typename T>
-float computeClusterVariance(const T *data, int *objMapping, long numObjects, float **centroids, int dataDepth) {
+double computeClusterVariance(const T *data, int *objMapping, long numObjects, float **centroids, int dataDepth) {
     long i;
-    float clustersVariance = 0;
+    double clustersVariance = 0;
     const T *pixel;
 
 #ifdef USE_OMP
 #pragma omp parallel for default(shared) private(pixel) reduction(+:clustersVariance)
 #endif
     for (i = 0; i < (int) numObjects; i++) {
-        pixel = data + i * dataDepth;
-        clustersVariance = distance(pixel, centroids[objMapping[i]], dataDepth);
+        pixel = data + (i * dataDepth);
+        clustersVariance += distance(pixel, centroids[objMapping[i]], dataDepth)/dataDepth;
     }
     return clustersVariance;
 }

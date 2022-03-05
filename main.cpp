@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     #else
         printf("End of iterations\n"); fflush(stdout);
     #endif
-        float inVariance = computeClusterVariance(data, pixelsMap, numPixels, centroids, numBands);
+        double inVariance = computeClusterVariance(data, pixelsMap, numPixels, centroids, numBands);
         printf("(k=%d) Within-class variance: %f\n\n", numClusters, inVariance); fflush(stdout);
 
     #ifdef USE_OMP
