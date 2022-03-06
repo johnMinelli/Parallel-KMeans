@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     // Make K-search
 #ifdef USE_OMP
     omp_set_nested(true);  // let every thread of search (the executions on different k values) start their pool
-    #pragma omp parallel for default(shared) num_threads(parser.searchParallelThreads)
+    #pragma omp parallel for default(shared) private(start_time) num_threads(parser.searchParallelThreads)
 #endif
     for (int k=minK; k < parser.numClusters+1; k++) {
 
