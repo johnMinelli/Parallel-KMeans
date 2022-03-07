@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 #ifdef USE_OMP
     printf("Data read in: %f seconds\n", omp_get_wtime() - start_time); fflush(stdout);
 #else
-    printf("Data read\n"; fflush(stdout);
+    printf("Data read\n"); fflush(stdout);
 #endif
 
     // Variables to keep track of best k value search, initialized at first position
