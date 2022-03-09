@@ -56,7 +56,7 @@ int ArgsParser::parse(int argc, char **argv) {
 }
 
 void printHelp(char *arg0) {
-    cout << endl << "Performs single-pass clustering for the specified image file." << endl
+    cout << endl << "Performs K-Means clustering for the specified image file." << endl
               << "USAGE:" << endl
               << "    " << arg0 << " "
               << "[-k numClusters] [-ksearch searchThreads kmeansThreads] [-i maxIterations] [-d dataUsage] [-s] [-o] [-v] [-t]"

@@ -7,8 +7,7 @@
 
 using namespace std;
 
-// Calculate the Euclidean distance between v1 and v2.  Each is assumed to be
-// a pointer to an array of 3 doubles.
+// Calculate the Euclidean distance between a and b.
 template<typename S, typename T>
 double distance(const S *a, const T *b, unsigned int numVals) {
     double sumSq = 0.0;
@@ -17,6 +16,7 @@ double distance(const S *a, const T *b, unsigned int numVals) {
     return sqrt(sumSq);
 }
 
+// Spread an addition of |numVals| values starting from src into the |numVals| of dest
 template<typename S, typename T>
 void arrayAdd(const S *src, T *dest, unsigned int numVals) {
     for (unsigned int i = 0; i < numVals; i++)

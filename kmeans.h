@@ -10,17 +10,17 @@
 
 using namespace std;
 
-// Computes the cluster centers by averaging all pixels assigned to each cluster.
+// Computes the cluster centers by averaging all objects assigned to each cluster.
 // ARGUMENTS:
-//   data		    An array with numPixels * numBands elements
-//   objMapping		numPixels long array whose elements associate each element
-//			in image with a specific cluster.
-//   numObjects		Number of pixels in image (each of which has numBands elements).
-//   centroids	    A numClusters long array of pointers to numBands-length
+//   data		An array with numObjects * dataDepth elements
+//   objMapping		numObjects long array whose elements will associate each
+//			object with a specific cluster.
+//   numObjects		Number of objects  (each of which has dataDepth elements).
+//   centroids	    A numClusters long array of pointers to dataDepth-length
 //			arrays in which the cluster centers will be returned.
-//   numClusters	Length of centers.  Also, max value in clusterMap is
+//   numClusters	Length of centroids.  Also, max value in objMapping is
 //			numClusters - 1.
-//   dataDepth		Length of pixels in image and vectors contained in centers.
+//   dataDepth		Depth of each object and also vectors contained in centroids.
 //   clustersSize	An array to receive the number of pixels assigned to each cluster
 #ifdef USE_OMP
 template<typename T>
@@ -78,18 +78,17 @@ int computeCentroids(const T *data, const int *objMapping, long numObjects,
 }
 #endif
 
-// Calculates clusterMap, which associates each element of image with one of the
-// elements of centers.
+// Calculates clusterMap, which associates each object with one of the elements of centroids.
 // ARGUMENTS:
-//   data		An array with numPixels * numBands elements
-//   objMapping		numPixels long array whose elements will associate each
-//			element in image with a specific cluster.
-//   numPixels		Number of pixels in image (each of which has numBands elements).
-//   centers		A numClusters long array of pointers to numBands-length
+//   data		An array with numObjects * dataDepth elements
+//   objMapping		numObjects long array whose elements will associate each
+//			object with a specific cluster.
+//   numObjects		Number of objects  (each of which has dataDepth elements).
+//   centroids		A numClusters long array of pointers to dataDepth-length
 //			arrays that define the cluster locations
-//   numClusters	Length of centers.  Also, max value in clusterMap is
+//   numClusters	Length of centroids.  Also, max value in objMapping is
 //			numClusters - 1.
-//   dataDepth		Length of pixels in image and vectors contained in centers.
+//   dataDepth		Depth of each object and also vectors contained in centroids.
 template<typename T>
 long assignObjects(const T *data, int *objMapping, long numObjects, float **centroids,
                   int numClusters, int dataDepth) {
@@ -123,6 +122,16 @@ long assignObjects(const T *data, int *objMapping, long numObjects, float **cent
     return numChanged;
 }
 
+// Calculates the total within-cluster variance for as a sum of all clusters. The distance from pixel
+// to centroid is normalized by the number of bands.
+// ARGUMENTS:
+//   data		An array with numObjects * dataDepth elements
+//   objMapping		numObjects long array whose elements will associate each
+//			object with a specific cluster.
+//   numObjects		Number of objects  (each of which has dataDepth elements).
+//   centroids		A numClusters long array of pointers to dataDepth-length
+//			arrays that define the cluster locations
+//   dataDepth		Depth of each object and also vectors contained in centers.
 template<typename T>
 double computeClusterVariance(const T *data, int *objMapping, long numObjects, float **centroids, int dataDepth) {
     long i;

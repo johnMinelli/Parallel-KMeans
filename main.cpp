@@ -29,9 +29,6 @@ using namespace std;
  *
  ****************************************************************************/
 
-//TODO
-// script for cluster execution
-
 int main(int argc, char *argv[]) {
 #ifdef USE_OMP
     printf("OpenMP enabled - Parallel execution with %d threads\n", omp_get_max_threads()); fflush(stdout);

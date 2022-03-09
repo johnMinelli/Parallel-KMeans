@@ -2,8 +2,8 @@
 #include <sstream>
 #include "SDL.h"
 
-#ifndef PARALLUSTERK_GUIRENDERER_H
-#define PARALLUSTERK_GUIRENDERER_H
+#ifndef GUIRENDERER_H
+#define GUIRENDERER_H
 
 using namespace std;
 
@@ -25,4 +25,4 @@ struct GUIRenderer {
 };
 
 
-#endif //PARALLUSTERK_GUIRENDERER_H
+#endif //GUIRENDERER_H
