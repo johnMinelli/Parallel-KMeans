@@ -9,6 +9,14 @@ Example of rendered result (GIF):
 
 ![render example](example_execution.gif)
 
+## Build:
+You can use CMake with the configuration file provided making sure to change the SDL2 path or trimming out that part if you are not interested in the GUI (GUIRenderer.cpp and GUIRenderer.h have to be removed as well from executable).
+
+Alternatively using GNU this is the command to build without GUI support
+```
+g++ main.cpp dataManager.cpp dataManager.h argsParser.cpp argsParser.h kmeans.h common.h -fopenmp -o build/output
+```
+while with GUI you have to take care to reference SDL2 library and add again GUIRenderer.cpp and GUIRenderer.h
 
 ## Usage:
 ```
